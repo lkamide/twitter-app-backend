@@ -3,7 +3,7 @@ const axios  = require('axios')
 async function findUserId (request){
   const {TWITTER_URL, TWITTER_TOKEN} = process.env
   console.log("entrei no get")
-  let user =  await axios.get(`${TWITTER_URL}2/users/by?usernames=${request.params.username}`, { headers: { 'Authorization': `Bearer ${TWITTER_TOKEN}` } }) 
+  let user =  await axios.get(`${TWITTER_URL}2/users/by?usernames=${request.params.username}&user.fields=profile_image_url,created_at,url,location,description,public_metrics`, { headers: { 'Authorization': `Bearer ${TWITTER_TOKEN}` } }) 
   return user.data.data[0]
 }
 
@@ -75,21 +75,37 @@ var module = module.exports = {
     return searchResult
 
   },
+  formatNumber(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  },
 
   async fetchUserInfos (request, response){
-    let user = await findUserId(request)
-    request.params.user = user.id
-    request.params.search = user.username
-    let search = await module.hashtagSearch(request, response)
-    let tweetCount = await module.tweetCount(request, response)
-    let lasTweets = await module.getLastTweets(request)
-    
-    let res = { 
-      data: search.data,
-      count: tweetCount.data,
-      lastTweets: lasTweets.data
-    }
+    try {
+      let user = await findUserId(request)
+      request.params.user = user.id
+      request.params.search = user.username
+      let search = await module.hashtagSearch(request, response)
+      let tweetCount = await module.tweetCount(request, response)
+      let lasTweets = await module.getLastTweets(request)
+      let res = {
+        data: search.data,
+        count: tweetCount.data,
+        lastTweets: lasTweets.data,
+        user: {
+          profile_image:  user.profile_image_url.replace("_normal", ""),
+          location: user.location,
+          created_at: user.created_at,
+          description: user.description,
+          url: user.url,
+          name: user.name,
+          followers: module.formatNumber(user.public_metrics.followers_count),
+          following: module.formatNumber(user.public_metrics.following_count)
+        }
+      }
 
-    return response.json(res)
+      return response.json(res)
+    } catch (error) {
+      return response.status(404).json({})
+    }
   },
 }
