@@ -65,7 +65,7 @@ var module = module.exports = {
     const { user } = request.params
     let searchResult = ""
     try {
-      searchResult = await axios.get(`${TWITTER_URL}2/users/${user}/tweets?expansions=attachments.media_keys&media.fields=url`,
+      searchResult = await axios.get(`${TWITTER_URL}2/users/${user}/tweets?expansions=attachments.media_keys&media.fields=url&tweet.fields=entities`,
         { headers: { 'Authorization': `Bearer ${TWITTER_TOKEN}` } 
       }) 
     } catch (error) {
